@@ -1,1 +1,24 @@
-Kindly wait still doing
+import googleapiclient.discovery
+import googleapiclient.errors
+from pymongo import MongoClient
+
+
+api_service_name = "youtube"
+api_version = "v3"
+api_key = "AIzaSyAVnIpAcy75VNtFRd1avocxjfOVOubbres"
+youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
+
+channel_id = "UCS2pJAOOJYak8PpB9oV1LdA"  
+video_id = "TtgNEPYnmFI"  
+
+channel_request = youtube.channels().list(part="snippet,statistics", id=channel_id)
+channel_response = channel_request.execute()
+
+video_request = youtube.videos().list(part="snippet,statistics", id=video_id)
+video_response = video_request.execute()
+
+channel_title = channel_response["items"][0]["snippet"]["title"]
+channel_view_count = channel_response["items"][0]["statistics"]["viewCount"]
+
+video_title = video_response["items"][0]["snippet"]["title"]
+video_view_count = video_response["items"][0]["statistics"]["viewCount"]

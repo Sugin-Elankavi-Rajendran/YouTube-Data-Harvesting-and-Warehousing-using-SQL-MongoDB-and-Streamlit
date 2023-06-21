@@ -1,5 +1,5 @@
 # YouTube-Data-Harvesting-and-Warehousing-using-SQL-MongoDB-and-Streamlit
 
-Used the google api library of python to make request with the youtube api
+Used the google api library of Python to make requests with the youtube API
 
-Then need to store the data in mongoDB data lake
+Stored the data in MongoDB data lake

@@ -1,7 +1,7 @@
 import googleapiclient.discovery
 import googleapiclient.errors
 from pymongo import MongoClient
-
+import pymongo
 
 api_service_name = "youtube"
 api_version = "v3"
@@ -22,3 +22,20 @@ channel_view_count = channel_response["items"][0]["statistics"]["viewCount"]
 
 video_title = video_response["items"][0]["snippet"]["title"]
 video_view_count = video_response["items"][0]["statistics"]["viewCount"]
+
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+
+mydatabase = myclient["youtube"]
+
+mycollection = mydatabase["details"]
+
+youtube_data = {
+    "title": video_title,
+    "view_count": video_view_count,
+    
+}
+
+mycollection.insert_one(youtube_data)
+
+client.close()
+

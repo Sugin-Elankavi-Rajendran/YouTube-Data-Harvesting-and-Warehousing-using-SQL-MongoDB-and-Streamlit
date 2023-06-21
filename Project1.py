@@ -41,3 +41,9 @@ mycollection.insert_one(youtube_data)
 
 myclient.close()
 
+connection = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="12345",
+    database="project1"
+)

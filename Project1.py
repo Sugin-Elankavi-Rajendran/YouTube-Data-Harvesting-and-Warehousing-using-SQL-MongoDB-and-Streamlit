@@ -2,6 +2,8 @@ import googleapiclient.discovery
 import googleapiclient.errors
 from pymongo import MongoClient
 import pymongo
+import mysql.connector
+
 
 api_service_name = "youtube"
 api_version = "v3"

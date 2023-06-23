@@ -5,6 +5,7 @@ import pymongo
 import mysql.connector
 from sqlalchemy import create_engine, text
 import streamlit as st
+import pandas as pd
 
 def main():
     st.title("YouTube Channel Analyzer")
@@ -22,7 +23,19 @@ def main():
     st.subheader("Migrate to Data Warehouse")
     migrate_checkbox = st.checkbox("Select to migrate this channel")
     if migrate_checkbox:
+
+    if not df.empty:
+        st.subheader("Retrieved Data")
+        st.dataframe(df)
+
+    if not df.empty:
+        st.subheader("Retrieved Data")
+        st.dataframe(df)
+
+        st.subheader("Data Visualization")
+
         
+        st.bar_chart(df.set_index("Title")["View Count"])  
 
 if __name__ == "__main__":
     main()
@@ -114,5 +127,11 @@ for row in result:
     channel_name = row.channel_name
 
 engine.dispose()
+
+
+df = pd.DataFrame(data, columns=["Title", "View Count", "Channel Name"])
+
+
+
 
 streamlit run project1.py

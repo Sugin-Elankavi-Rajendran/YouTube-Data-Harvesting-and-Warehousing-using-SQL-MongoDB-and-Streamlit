@@ -47,3 +47,26 @@ connection = mysql.connector.connect(
     password="12345",
     database="project1"
 )
+
+cursor = connection.cursor()
+create_table = """
+    CREATE TABLE videos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255),
+        view_count INT,
+    )
+"""
+cursor.execute(create_table)
+
+for video_data in youtube_data:
+    insert_query = """
+        INSERT INTO videos (title, view_count)
+        VALUES (%s, %s)
+    """
+    data = (video_data["title"], video_data["view_count"])  
+    cursor.execute(insert_query, data)
+
+connection.commit()
+cursor.close()
+connection.close()
+

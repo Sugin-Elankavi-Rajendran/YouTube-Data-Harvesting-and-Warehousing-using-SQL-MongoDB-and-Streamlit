@@ -4,6 +4,29 @@ from pymongo import MongoClient
 import pymongo
 import mysql.connector
 from sqlalchemy import create_engine, text
+import streamlit as st
+
+def main():
+    st.title("YouTube Channel Analyzer")
+
+    
+    channel_id = st.text_input("Enter YouTube Channel ID")
+
+    
+    if channel_id:
+        st.subheader("Channel Details")
+        st.write("Channel ID:", channel_id)
+        
+
+    
+    st.subheader("Migrate to Data Warehouse")
+    migrate_checkbox = st.checkbox("Select to migrate this channel")
+    if migrate_checkbox:
+        
+
+if __name__ == "__main__":
+    main()
+
 
 
 api_service_name = "youtube"
@@ -92,3 +115,4 @@ for row in result:
 
 engine.dispose()
 
+streamlit run project1.py

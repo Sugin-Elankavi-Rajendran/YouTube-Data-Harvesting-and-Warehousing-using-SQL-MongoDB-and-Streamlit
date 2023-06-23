@@ -22,7 +22,7 @@ def main():
     
     st.subheader("Migrate to Data Warehouse")
     migrate_checkbox = st.checkbox("Select to migrate this channel")
-    if migrate_checkbox:
+    #if migrate_checkbox:
 
     if not df.empty:
         st.subheader("Retrieved Data")

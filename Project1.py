@@ -3,6 +3,7 @@ import googleapiclient.errors
 from pymongo import MongoClient
 import pymongo
 import mysql.connector
+from sqlalchemy import create_engine, text
 
 
 api_service_name = "youtube"
@@ -69,4 +70,25 @@ for video_data in youtube_data:
 connection.commit()
 cursor.close()
 connection.close()
+
+connection_string = "mysql+mysqlconnector://root:12345@localhost/project1"
+engine = create_engine(connection_string)
+
+channel_id = "UCS2pJAOOJYak8PpB9oV1LdA" 
+
+query = text("""
+    SELECT v.title, v.view_count, c.channel_name
+    FROM videos v
+    JOIN channels c ON v.channel_id = c.id
+    WHERE c.channel_id = :channel_id
+""")
+
+result = engine.execute(query, channel_id=channel_id)
+
+for row in result:
+    video_title = row.title
+    view_count = row.view_count
+    channel_name = row.channel_name
+
+engine.dispose()
 

@@ -86,6 +86,7 @@ class Channel(Base):
 def fetch_channel_data(channel_id):
     query = f"SELECT * FROM channel WHERE channel_id = '{channel_id}'"
     df = pd.read_sql_query(query, engine)
+    return df
 
 def get_channel_details(channel_id):
     response = youtube.channels().list(
@@ -123,6 +124,19 @@ def main():
 
         else:
             st.write("Invalid channel ID. Please enter a valid YouTube channel ID.")
+    
+    # Fetch the channel data and display it
+    if st.button("Fetch Channel Data"):
+        if channel_id:
+            df = fetch_channel_data(channel_id)
+            st.subheader("Channel Data")
+            st.dataframe(df)
+
+            # Display a bar chart of the subscribers and views
+            st.subheader("Subscribers vs Views")
+            st.bar_chart(df[["subscribers", "views"]])
+        else:
+            st.warning("Please enter a YouTube channel ID first.")
 
 if __name__ == "__main__":
     main()

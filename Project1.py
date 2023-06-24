@@ -9,13 +9,57 @@ import pandas as pd
 
 
 
-
-
 api_service_name = "youtube"
 api_version = "v3"
 api_key = "AIzaSyAVnIpAcy75VNtFRd1avocxjfOVOubbres"
 youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
 
+
+def get_channel_details(channel_id):
+    response = youtube.channels().list(
+        part="snippet,statistics",
+        id=channel_id
+    ).execute()
+
+    if "items" in response:
+        channel = response["items"][0]
+        return channel
+    else:
+        return None
+
+
+def main():
+    st.title("YouTube Channel Migration")
+    
+    
+    channel_id = st.text_input("Enter YouTube Channel ID")
+
+    if channel_id:
+        channel = get_channel_details(channel_id)
+        if channel:
+            
+            st.subheader("Channel Details")
+            st.write("Title:", channel["snippet"]["title"])
+            st.write("Description:", channel["snippet"]["description"])
+            st.write("Subscribers:", channel["statistics"]["subscriberCount"])
+            st.write("Total Views:", channel["statistics"]["viewCount"])
+            st.write("Total Videos:", channel["statistics"]["videoCount"])
+
+            
+            migrate_channel = st.checkbox("Migrate this channel")
+
+            if migrate_channel:
+                
+                st.write("Channel", channel["snippet"]["title"], "is selected for migration!")
+        else:
+            st.write("Invalid channel ID. Please enter a valid YouTube channel ID.")
+
+if __name__ == "__main__":
+    main()
+
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 channel_id = "UCS2pJAOOJYak8PpB9oV1LdA"  
 video_id = "TtgNEPYnmFI"  
 

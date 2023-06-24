@@ -7,40 +7,7 @@ from sqlalchemy import create_engine, text
 import streamlit as st
 import pandas as pd
 
-df = pd.DataFrame(data, columns=["Title", "View Count", "Channel Name"])
 
-def main():
-    st.title("YouTube Channel Analyzer")
-
-    
-    channel_id = st.text_input("Enter YouTube Channel ID")
-
-    
-    if channel_id:
-        st.subheader("Channel Details")
-        st.write("Channel ID:", channel_id)
-        
-
-    
-    st.subheader("Migrate to Data Warehouse")
-    migrate_checkbox = st.checkbox("Select to migrate this channel")
-    #if migrate_checkbox:
-
-    if not df.empty:
-        st.subheader("Retrieved Data")
-        st.dataframe(df)
-
-    if not df.empty:
-        st.subheader("Retrieved Data")
-        st.dataframe(df)
-
-        st.subheader("Data Visualization")
-
-        
-        st.bar_chart(df.set_index("Title")["View Count"])  
-
-if __name__ == "__main__":
-    main()
 
 
 
@@ -131,7 +98,38 @@ for row in result:
 engine.dispose()
 
 
+df = pd.DataFrame(data, columns=["Title", "View Count", "Channel Name"])
 
 
+def main():
+    st.title("YouTube Channel Analyzer")
 
+    
+    channel_id = st.text_input("Enter YouTube Channel ID")
 
+    
+    if channel_id:
+        st.subheader("Channel Details")
+        st.write("Channel ID:", channel_id)
+        
+
+    
+    st.subheader("Migrate to Data Warehouse")
+    migrate_checkbox = st.checkbox("Select to migrate this channel")
+    #if migrate_checkbox:
+
+    if not df.empty:
+        st.subheader("Retrieved Data")
+        st.dataframe(df)
+
+    if not df.empty:
+        st.subheader("Retrieved Data")
+        st.dataframe(df)
+
+        st.subheader("Data Visualization")
+
+        
+        st.bar_chart(df.set_index("Title")["View Count"])  
+
+if __name__ == "__main__":
+    main()

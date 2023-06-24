@@ -7,6 +7,8 @@ from sqlalchemy import create_engine, text
 import streamlit as st
 import pandas as pd
 
+df = pd.DataFrame(data, columns=["Title", "View Count", "Channel Name"])
+
 def main():
     st.title("YouTube Channel Analyzer")
 
@@ -129,7 +131,7 @@ for row in result:
 engine.dispose()
 
 
-df = pd.DataFrame(data, columns=["Title", "View Count", "Channel Name"])
+
 
 
 

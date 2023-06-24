@@ -13,7 +13,7 @@ import pandas as pd
 # Streamlit
 api_service_name = "youtube"
 api_version = "v3"
-api_key = "YOUR_API_KEY"
+api_key = "AIzaSyAVnIpAcy75VNtFRd1avocxjfOVOubbres"
 
 youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
 

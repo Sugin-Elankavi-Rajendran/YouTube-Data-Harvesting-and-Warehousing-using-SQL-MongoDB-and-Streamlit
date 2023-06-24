@@ -89,7 +89,7 @@ def migrate_channel_data(channel_data):
     cursor.execute(sql, values)
     connection.commit()
 
-connection_string = "mysql+mysqlconnector://root:YOUR_PASSWORD@localhost/project1"
+connection_string = "mysql+mysqlconnector://root:12345@localhost/project1"
 engine = create_engine(connection_string)
 Session = sessionmaker(bind=engine)
 session = Session()

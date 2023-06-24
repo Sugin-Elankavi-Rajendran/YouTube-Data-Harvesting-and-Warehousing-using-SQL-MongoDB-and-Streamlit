@@ -109,4 +109,4 @@ class Channel(Base):
 
 def fetch_channel_data(channel_id):
     query = f"SELECT * FROM channel WHERE channel_id = '{channel_id}'"
-    df = pd.read_sql_query(query, engine
+    df = pd.read_sql_query(query, engine)

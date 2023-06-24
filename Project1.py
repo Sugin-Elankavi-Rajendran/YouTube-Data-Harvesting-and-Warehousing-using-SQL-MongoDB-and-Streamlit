@@ -132,4 +132,4 @@ engine.dispose()
 df = pd.DataFrame(data, columns=["Title", "View Count", "Channel Name"])
 
 
-streamlit run project1.py
+

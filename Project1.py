@@ -13,7 +13,7 @@ import pandas as pd
 # Streamlit
 api_service_name = "youtube"
 api_version = "v3"
-api_key = "AIzaSyAVnIpAcy75VNtFRd1avocxjfOVOubbres"
+api_key = "<Your YouTube API Key>"
 
 youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
 
@@ -30,7 +30,7 @@ def store_channel_data(channel_data):
 connection = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="12345",
+    password="<Your MySQL Password>",
     database="project1"
 )
 
@@ -44,14 +44,28 @@ def migrate_channel_data(channel_data):
     views = channel_data["statistics"]["viewCount"]
     videos = channel_data["statistics"]["videoCount"]
 
-    sql = "INSERT INTO channel (channel_id, title, description, subscribers, views, videos) " \
-          "VALUES (%s, %s, %s, %s, %s, %s)"
+    sql_create_table = """
+    CREATE TABLE IF NOT EXISTS channel (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        channel_id VARCHAR(255),
+        title VARCHAR(255),
+        description VARCHAR(255),
+        subscribers INT,
+        views INT,
+        videos INT
+    )
+    """
+    cursor.execute(sql_create_table)
 
+    sql_insert_data = """
+    INSERT INTO channel (channel_id, title, description, subscribers, views, videos)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    """
     values = (channel_id, title, description, subscribers, views, videos)
-    cursor.execute(sql, values)
+    cursor.execute(sql_insert_data, values)
     connection.commit()
 
-connection_string = "mysql+mysqlconnector://root:12345@localhost/project1"
+connection_string = "mysql+mysqlconnector://root:<Your MySQL Password>@localhost/project1"
 engine = create_engine(connection_string)
 Session = sessionmaker(bind=engine)
 session = Session()

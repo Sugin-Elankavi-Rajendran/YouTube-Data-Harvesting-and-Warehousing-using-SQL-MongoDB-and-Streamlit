@@ -3,11 +3,14 @@ import googleapiclient.errors
 from pymongo import MongoClient
 import pymongo
 import mysql.connector
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, String, Integer
 import streamlit as st
 import pandas as pd
 
-
+#streamlit
 
 api_service_name = "youtube"
 api_version = "v3"
@@ -57,23 +60,7 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-channel_id = "UCS2pJAOOJYak8PpB9oV1LdA"  
-video_id = "TtgNEPYnmFI"  
-
-channel_request = youtube.channels().list(part="snippet,statistics", id=channel_id)
-channel_response = channel_request.execute()
-
-video_request = youtube.videos().list(part="snippet,statistics", id=video_id)
-video_response = video_request.execute()
-
-channel_title = channel_response["items"][0]["snippet"]["title"]
-channel_view_count = channel_response["items"][0]["statistics"]["viewCount"]
-
-video_title = video_response["items"][0]["snippet"]["title"]
-video_view_count = video_response["items"][0]["statistics"]["viewCount"]
+#mongoDb
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 
@@ -81,15 +68,12 @@ mydatabase = myclient["youtube"]
 
 mycollection = mydatabase["details"]
 
-youtube_data = {
-    "title": video_title,
-    "view_count": video_view_count,
+def store_channel_data(channel_data):
     
-}
+    result = collection.insert_one(channel_data)
+    print("Channel data stored in MongoDB with ID:", result.inserted_id)
 
-mycollection.insert_one(youtube_data)
-
-myclient.close()
+#sql
 
 connection = mysql.connector.connect(
     host="localhost",
@@ -99,22 +83,23 @@ connection = mysql.connector.connect(
 )
 
 cursor = connection.cursor()
-create_table = """
-    CREATE TABLE videos (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        title VARCHAR(255),
-        view_count INT,
-    )
-"""
-cursor.execute(create_table)
 
-for video_data in youtube_data:
-    insert_query = """
-        INSERT INTO videos (title, view_count)
-        VALUES (%s, %s)
-    """
-    data = (video_data["title"], video_data["view_count"])  
-    cursor.execute(insert_query, data)
+def migrate_channel_data(channel_data):
+    # Extract relevant data from the channel_data dictionary
+    channel_id = channel_data["id"]
+    title = channel_data["snippet"]["title"]
+    description = channel_data["snippet"]["description"]
+    subscribers = channel_data["statistics"]["subscriberCount"]
+    views = channel_data["statistics"]["viewCount"]
+    videos = channel_data["statistics"]["videoCount"]
+
+    # Prepare the SQL INSERT statement
+    sql = "INSERT INTO project1 (channel_id, title, description, subscribers, views, videos) " \
+          "VALUES (%s, %s, %s, %s, %s, %s)"
+
+    # Execute the SQL INSERT statement with the channel data
+    values = (channel_id, title, description, subscribers, views, videos)
+    cursor.execute(sql, values)
 
 connection.commit()
 cursor.close()
@@ -122,58 +107,59 @@ connection.close()
 
 connection_string = "mysql+mysqlconnector://root:12345@localhost/project1"
 engine = create_engine(connection_string)
+session = Session()
 
-channel_id = "UCS2pJAOOJYak8PpB9oV1LdA" 
+# Create a base class for declarative models
+Base = declarative_base()
 
-query = text("""
-    SELECT v.title, v.view_count, c.channel_name
-    FROM videos v
-    JOIN channels c ON v.channel_id = c.id
-    WHERE c.channel_id = :channel_id
-""")
+class Channel(Base):
+    __tablename__ = "channel"
 
-result = engine.execute(query, channel_id=channel_id)
+    id = Column(Integer, primary_key=True)
+    channel_id = Column(String(255))
+    title = Column(String(255))
+    description = Column(String(255))
+    subscribers = Column(Integer)
+    views = Column(Integer)
+    videos = Column(Integer)
 
-for row in result:
-    video_title = row.title
-    view_count = row.view_count
-    channel_name = row.channel_name
+def get_channel_details(channel_id):
+    channel = session.query(Channel).filter_by(channel_id=channel_id).first()
+    return channel
 
-engine.dispose()
+session.close()
 
 
-df = pd.DataFrame(data, columns=["Title", "View Count", "Channel Name"])
+# Replace with your MySQL connection details
+engine = create_engine(connection_string)
 
+def fetch_channel_data(channel_id):
+    query = f"SELECT * FROM channel WHERE channel_id = '{channel_id}'"
+    df = pd.read_sql_query(query, engine)
+    return df
 
 def main():
-    st.title("YouTube Channel Analyzer")
+    st.title("YouTube Channel Migration")
 
-    
+    # Input for YouTube channel ID
     channel_id = st.text_input("Enter YouTube Channel ID")
 
-    
     if channel_id:
-        st.subheader("Channel Details")
-        st.write("Channel ID:", channel_id)
-        
+        df = fetch_channel_data(channel_id)
 
-    
-    st.subheader("Migrate to Data Warehouse")
-    migrate_checkbox = st.checkbox("Select to migrate this channel")
-    #if migrate_checkbox:
+        if not df.empty:
+            # Display channel details
+            st.subheader("Channel Details")
+            st.write(df)
 
-    if not df.empty:
-        st.subheader("Retrieved Data")
-        st.dataframe(df)
-
-    if not df.empty:
-        st.subheader("Retrieved Data")
-        st.dataframe(df)
-
-        st.subheader("Data Visualization")
-
-        
-        st.bar_chart(df.set_index("Title")["View Count"])  
+            # You can further visualize the data using Streamlit's data visualization features
+            # For example, create a bar chart of subscribers
+            st.subheader("Subscribers")
+            st.bar_chart(df["subscribers"])
+        else:
+            st.write("No data found for the given channel ID.")
+    else:
+        st.write("Please enter a YouTube channel ID.")
 
 if __name__ == "__main__":
     main()

@@ -10,14 +10,14 @@ from sqlalchemy import Column, String, Integer
 import streamlit as st
 import pandas as pd
 
-# Streamlit
+
 api_service_name = "youtube"
 api_version = "v3"
-api_key = "AIzaSyAVnIpAcy75VNtFRd1avocxjfOVOubbres"
+api_key = "API_KEY"
 
 youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
 
-# MongoDB
+
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydatabase = myclient["youtube"]
 mycollection = mydatabase["details"]
@@ -26,11 +26,11 @@ def store_channel_data(channel_data):
     result = mycollection.insert_one(channel_data)
     print("Channel data stored in MongoDB with ID:", result.inserted_id)
 
-# SQL
+
 connection = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="12345",
+    password="PASSWORD",
     database="project1"
 )
 
@@ -65,7 +65,7 @@ def migrate_channel_data(channel_data):
     cursor.execute(sql_insert_data, values)
     connection.commit()
 
-connection_string = "mysql+mysqlconnector://root:12345@localhost/project1"
+connection_string = "mysql+mysqlconnector://root:PASSWORD@localhost/project1"
 engine = create_engine(connection_string)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -125,14 +125,14 @@ def main():
         else:
             st.write("Invalid channel ID. Please enter a valid YouTube channel ID.")
     
-    # Fetch the channel data and display it
+    
     if st.button("Fetch Channel Data"):
         if channel_id:
             df = fetch_channel_data(channel_id)
             st.subheader("Channel Data")
             st.dataframe(df)
 
-            # Display a bar chart of the subscribers and views
+            
             st.subheader("Subscribers vs Views")
             st.bar_chart(df[["subscribers", "views"]])
         else:

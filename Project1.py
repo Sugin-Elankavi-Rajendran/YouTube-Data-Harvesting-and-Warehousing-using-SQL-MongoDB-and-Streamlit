@@ -68,7 +68,7 @@ def store_channel_data(channel_data):
 connection = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="YOUR_PASSWORD",
+    password="12345",
     database="project1"
 )
 

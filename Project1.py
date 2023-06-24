@@ -100,4 +100,15 @@ def main():
             st.write("Total Views:", channel["statistics"]["viewCount"])
             st.write("Total Videos:", channel["statistics"]["videoCount"])
 
-            migrate_channel
+            migrate_channel = st.checkbox("Migrate this channel")
+
+            if migrate_channel:
+                st.write("Channel", channel["snippet"]["title"], "is selected for migration!")
+                store_channel_data(channel)
+                migrate_channel_data(channel)
+
+        else:
+            st.write("Invalid channel ID. Please enter a valid YouTube channel ID.")
+
+if __name__ == "__main__":
+    main()

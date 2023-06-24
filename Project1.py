@@ -13,7 +13,7 @@ import pandas as pd
 # Streamlit
 api_service_name = "youtube"
 api_version = "v3"
-api_key = "AIzaSyAVnIpAcy75VNtFRd1avocxjfOVOubbres"
+api_key = "<Your YouTube API Key>"
 
 youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
 
@@ -48,6 +48,8 @@ def main():
 
             if migrate_channel:
                 st.write("Channel", channel["snippet"]["title"], "is selected for migration!")
+                store_channel_data(channel)
+                migrate_channel_data(channel)
 
         else:
             st.write("Invalid channel ID. Please enter a valid YouTube channel ID.")
@@ -68,7 +70,7 @@ def store_channel_data(channel_data):
 connection = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="12345",
+    password="<Your MySQL Password>",
     database="project1"
 )
 
@@ -89,7 +91,7 @@ def migrate_channel_data(channel_data):
     cursor.execute(sql, values)
     connection.commit()
 
-connection_string = "mysql+mysqlconnector://root:12345@localhost/project1"
+connection_string = "mysql+mysqlconnector://root:<Your MySQL Password>@localhost/project1"
 engine = create_engine(connection_string)
 Session = sessionmaker(bind=engine)
 session = Session()

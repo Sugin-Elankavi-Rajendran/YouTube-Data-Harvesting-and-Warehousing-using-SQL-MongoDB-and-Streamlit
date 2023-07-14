@@ -13,3 +13,9 @@ myclient = pymongo.MongoClient("mongodb://localhost/27017")
 mydatabase = myclient["youtube"]
 mycollection = mydatabase ["details"]
 
+def main():
+    st.title("Youtube channel migration")
+
+
+if __name__ = "__main__" :
+    main()

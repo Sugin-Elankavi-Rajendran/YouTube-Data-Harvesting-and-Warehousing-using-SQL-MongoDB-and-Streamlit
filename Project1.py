@@ -30,7 +30,7 @@ def store_channel_data(channel_data):
 connection = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="PASSWORD",
+    password="12345",
     database="project1"
 )
 
@@ -65,7 +65,7 @@ def migrate_channel_data(channel_data):
     cursor.execute(sql_insert_data, values)
     connection.commit()
 
-connection_string = "mysql+mysqlconnector://root:PASSWORD@localhost/project1"
+connection_string = "mysql+mysqlconnector://root:12345@localhost/project1"
 engine = create_engine(connection_string)
 Session = sessionmaker(bind=engine)
 session = Session()

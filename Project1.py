@@ -13,7 +13,7 @@ import pandas as pd
 
 api_service_name = "youtube"
 api_version = "v3"
-api_key = input("Enter API Key: ")
+api_key = "<your-api-key>"
 
 youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
 
@@ -84,8 +84,9 @@ class Channel(Base):
     videos = Column(Integer)
 
 def fetch_channel_data(channel_id):
-    query = f"SELECT * FROM channel WHERE channel_id = '{channel_id}'"
-    df = pd.read_sql_query(query, engine)
+    query = f"SELECT * FROM channel WHERE channel_id = %s"
+    values = (channel_id,)
+    df = pd.read_sql_query(query, engine, params=values)
     return df
 
 def get_channel_details(channel_id):

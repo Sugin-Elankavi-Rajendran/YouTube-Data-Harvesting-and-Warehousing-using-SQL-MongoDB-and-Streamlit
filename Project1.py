@@ -1,21 +1,16 @@
 import googleapiclient.discovery
-import googleapiclient.errors
-from pymongo import MongoClient
 import pymongo
+from pymongo import MongoClient
+import mysql
 
-api_name = "youtube"
+api_service_name = "youtube"
 api_version = "v3"
-youtube_api_key = input("Enter API Key:")
+api_key = input("Enter API Key: ")
 
-youtube = googleapiclient.discovery.build(api_name,api_version,developerKey=youtube_api_key)
+youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
 
-myclient = pymongo.MongoClient("mongodb://localhost/27017")
+myclient = MongoClient("mongodb://localhost:27017/")
 mydatabase = myclient["youtube"]
-mycollection = mydatabase ["details"]
-
-def main():
-    st.title("Youtube channel migration")
+mycollection = mydatabase["details"]
 
 
-if __name__ = "__main__" :
-    main()

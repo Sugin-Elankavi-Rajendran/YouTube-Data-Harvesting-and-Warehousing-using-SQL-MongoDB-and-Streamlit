@@ -9,13 +9,14 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Integer
 import streamlit as st
 import pandas as pd
+from config import API_KEY
+
 
 
 api_service_name = "youtube"
 api_version = "v3"
-api_key = "API_KEY"
 
-youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
+youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=API_KEY)
 
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
@@ -30,7 +31,7 @@ def store_channel_data(channel_data):
 connection = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="PASSWORD",
+    password="12345",
     database="project1"
 )
 
@@ -65,7 +66,7 @@ def migrate_channel_data(channel_data):
     cursor.execute(sql_insert_data, values)
     connection.commit()
 
-connection_string = "mysql+mysqlconnector://root:PASSWORD@localhost/project1"
+connection_string = "mysql+mysqlconnector://root:12345@localhost/project1"
 engine = create_engine(connection_string)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -84,8 +85,9 @@ class Channel(Base):
     videos = Column(Integer)
 
 def fetch_channel_data(channel_id):
-    query = f"SELECT * FROM channel WHERE channel_id = '{channel_id}'"
-    df = pd.read_sql_query(query, engine)
+    query = f"SELECT * FROM channel WHERE channel_id = %s"
+    values = (channel_id,)
+    df = pd.read_sql_query(query, engine, params=values)
     return df
 
 def get_channel_details(channel_id):

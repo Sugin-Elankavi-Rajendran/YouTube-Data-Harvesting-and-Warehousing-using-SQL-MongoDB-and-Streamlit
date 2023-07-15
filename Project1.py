@@ -9,13 +9,14 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Integer
 import streamlit as st
 import pandas as pd
+from config import API_KEY
+
 
 
 api_service_name = "youtube"
 api_version = "v3"
-api_key = "<your-api-key>"
 
-youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
+youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=API_KEY)
 
 
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")

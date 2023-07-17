@@ -3,6 +3,7 @@ import pymongo
 from pymongo import MongoClient
 import mysql
 from config import API_KEY
+import streamlit as st
 
 api_service_name = "youtube"
 api_version = "v3"
@@ -14,3 +15,8 @@ mydatabase = myclient["youtube"]
 mycollection = mydatabase["details"]
 
 
+def main():
+    st.title("YouTube Channel Migration")
+
+if __name__ == "__main__":
+    main()

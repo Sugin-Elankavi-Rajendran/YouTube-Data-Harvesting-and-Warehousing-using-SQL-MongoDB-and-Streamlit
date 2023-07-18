@@ -23,28 +23,39 @@ def main():
     if channel:
         response = youtube.channels().list(part='snippet,statistics,ContentDetails',id=channel).execute()
         channel_name = response['items'][0]
+
         channel_title = channel_name['snippet']['title']
         channel_subscribers = channel_name['statistics']['subscriberCount']
         channel_views = channel_name['statistics']['viewCount']
         channel_description = channel_name ['snippet']['description']
-        
-        st.write (channel_name)                    
+                            
         st.write (f'Channel Name: {channel_title}')
         st.write (f'Channel ID: {channel}')
         st.write (f'Channel Subscribers: {channel_subscribers}')
         st.write (f'Channel Views: {channel_views}')
         st.write (f'Channel Description: {channel_description}')
         
-        response1 = youtube.playlists().list(part='snippet',channelId=channel).execute()
-        for items1 in response1['items']:
-            playlist_title = items1 ['snippet'] ['title']
-            playlist_id = items1 ['id']
-            st.write (f'Playlist Title: {playlist_title}')
-            st.write (f'Playlist ID: {playlist_id}')
+        playlist_response = youtube.playlists().list(part='snippet',channelId=channel,maxResults=5).execute()
+        playlists = playlist_response['items']
+
+        while 'nextPageToken' in playlist_response:
+            next_page_token = playlist_response['nextPageToken']
+            playlist_response = youtube.playlists().list(part='snippet', channelId=channel, maxResults=50, pageToken=next_page_token).execute()
+            playlists.extend(playlist_response['items'])
+
+        for playlist in playlists:
+            playlist_title = playlist['snippet']['title']
+            playlist_id = playlist['id']
+            #st.write(f'Playlist Title: {playlist_title}')
+            #st.write(f'Playlist ID: {playlist_id}')
         
-        response2 = youtube.search().list(part='snippet',channelId=channel,type='video').execute()
-        channel_names = response2['items']
-        st.write (channel_names)
+        video_response = youtube.search().list(part='snippet',channelId=channel,type='video').execute()
+        for video in video_response ['items']:
+                video_title = video['snippet']['title']
+                video_id = video['id']['videoId']
+                st.write(f'Video Title: {video_title}')
+                st.write(f'Video ID: {video_id}')
+        
 
 if __name__ == "__main__":
     main()

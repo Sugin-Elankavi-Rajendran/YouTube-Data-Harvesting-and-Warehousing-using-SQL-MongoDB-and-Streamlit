@@ -118,8 +118,7 @@ def main():
                 st.write(f'Video Title: {video_title}')
                 st.write(f'Video ID: {video_id}')
                 
-                comment_response = youtube.commentThreads().list(part='snippet', videoId=video_id,
-                                                                      maxResults=20).execute()
+                comment_response = youtube.commentThreads().list(part='snippet', videoId=video_id,maxResults=20).execute()
                 comments = comment_response['items']
 
                 for comment in comments:

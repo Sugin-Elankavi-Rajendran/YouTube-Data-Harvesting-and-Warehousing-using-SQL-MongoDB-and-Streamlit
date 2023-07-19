@@ -4,6 +4,7 @@ from pymongo import MongoClient
 import mysql
 from config import API_KEY
 import streamlit as st
+import mysql.connector
 
 api_service_name = "youtube"
 api_version = "v3"
@@ -59,6 +60,70 @@ def get_video_data(channel_id):
 
     return videos
 
+def create_mysql_connection():
+    connection = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="12345",
+        database="project1"
+    )
+    cursor = connection.cursor()
+    return connection, cursor
+
+
+def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
+    
+    channel_sql = """
+    INSERT INTO channels (channel_id, channel_name, subscription_count, channel_views, channel_description)
+    VALUES (%s, %s, %s, %s, %s)
+    """
+    channel_values = (
+        channel_data["Channel_Name"]["Channel_Id"],
+        channel_data["Channel_Name"]["Channel_Name"],
+        channel_data["Channel_Name"]["Subscription_Count"],
+        channel_data["Channel_Name"]["Channel_Views"],
+        channel_data["Channel_Name"]["Channel_Description"]
+    )
+    cursor.execute(channel_sql, channel_values)
+    connection.commit()
+
+    
+    for playlist in playlists:
+        playlist_sql = """
+        INSERT INTO playlists (playlist_id, playlist_title)
+        VALUES (%s, %s)
+        """
+        playlist_values = (
+            playlist["id"],
+            playlist["snippet"]["title"]
+        )
+        cursor.execute(playlist_sql, playlist_values)
+        connection.commit()
+
+    
+    for video in videos:
+        video_sql = """
+        INSERT INTO videos (video_id, video_title, video_description, tags, published_at, view_count,
+                            like_count, dislike_count, favorite_count, comment_count, duration, thumbnail, caption_status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        video_values = (
+            video["id"]["videoId"],
+            video["snippet"]["title"],
+            video["snippet"]["description"],
+            ",".join(video["snippet"].get("tags", [])),
+            video["snippet"]["publishedAt"],
+            int(video["statistics"]["viewCount"]),
+            int(video["statistics"]["likeCount"]),
+            int(video["statistics"]["dislikeCount"]),
+            int(video["statistics"]["favoriteCount"]),
+            int(video["statistics"]["commentCount"]),
+            video["contentDetails"]["duration"],
+            video["snippet"]["thumbnails"]["default"]["url"],
+            video["contentDetails"].get("caption", "Not Available")
+        )
+        cursor.execute(video_sql, video_values)
+        connection.commit()
 
 def main():
     st.title("YouTube Channel Migration")

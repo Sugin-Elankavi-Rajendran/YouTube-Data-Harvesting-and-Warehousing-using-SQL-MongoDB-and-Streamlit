@@ -5,6 +5,7 @@ import mysql
 from config import API_KEY
 import streamlit as st
 import mysql.connector
+import matplotlib.pyplot as plt
 
 api_service_name = "youtube"
 api_version = "v3"
@@ -224,6 +225,17 @@ def execute_sql_queries(connection, cursor):
     result4 = cursor.fetchall()
     st.write("Number of comments on each video:")
     st.table(result4)
+    
+    video_titles = [row[0] for row in result4]
+    num_comments = [row[1] for row in result4]
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(video_titles, num_comments)
+    plt.xlabel('Video Titles')
+    plt.ylabel('Number of Comments')
+    plt.title('Number of Comments on Each Video')
+    plt.xticks(rotation=45)
+    st.pyplot()
 
     
     query5 = """

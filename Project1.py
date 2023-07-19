@@ -125,6 +125,56 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
         cursor.execute(video_sql, video_values)
         connection.commit()
 
+def create_mysql_connection():
+    connection = mysql.connector.connect(
+        host="your_mysql_host",
+        user="your_mysql_username",
+        password="your_mysql_password",
+        database="your_database_name"
+    )
+    cursor = connection.cursor()
+    return connection, cursor
+
+
+def retrieve_data_for_channels(channel_ids, connection, cursor):
+    channels_data = []
+
+    for channel_id in channel_ids:
+        
+        channel_sql = f"""
+        SELECT *
+        FROM channels
+        WHERE channel_id = '{channel_id}'
+        """
+        cursor.execute(channel_sql)
+        channel_data = cursor.fetchone()
+
+        
+        playlists_sql = f"""
+        SELECT *
+        FROM playlists
+        WHERE channel_id = '{channel_id}'
+        """
+        cursor.execute(playlists_sql)
+        playlists_data = cursor.fetchall()
+
+        
+        videos_sql = f"""
+        SELECT *
+        FROM videos
+        WHERE channel_id = '{channel_id}'
+        """
+        cursor.execute(videos_sql)
+        videos_data = cursor.fetchall()
+
+        channels_data.append({
+            "Channel": channel_data,
+            "Playlists": playlists_data,
+            "Videos": videos_data
+        })
+
+    return channels_data
+
 def main():
     st.title("YouTube Channel Migration")
 
@@ -158,5 +208,53 @@ def main():
 
         st.write("Data stored in MongoDB!")
 
+    connection, cursor = create_mysql_connection()
+
+    
+    mycollection.insert_one(channel_data["Channel_Name"])
+    for playlist in playlists:
+        mycollection.insert_one({"Playlist": playlist})
+    for video in videos:
+        mycollection.insert_one({"Video": video})
+
+    
+    migrate_to_mysql(channel_data, playlists, videos, connection, cursor)
+
+    
+    st.write("Data stored in MySQL!")
+
+    channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):")
+    channel_ids = channel_ids.strip().split("\n") if channel_ids else []
+
+    
+    channels_data = retrieve_data_for_channels(channel_ids, connection, cursor)
+
+    
+    for channel_data in channels_data:
+        channel_info = channel_data["Channel"]
+        st.write(f"Channel Name: {channel_info[1]}")
+        st.write(f"Channel ID: {channel_info[0]}")
+        st.write(f"Channel Subscribers: {channel_info[2]}")
+        st.write(f"Channel Views: {channel_info[3]}")
+        st.write(f"Channel Description: {channel_info[4]}")
+
+        playlists_info = channel_data["Playlists"]
+        st.write("Playlists:")
+        for playlist_info in playlists_info:
+            st.write(f"Playlist Title: {playlist_info[1]}")
+            st.write(f"Playlist ID: {playlist_info[0]}")
+
+        videos_info = channel_data["Videos"]
+        st.write("Videos:")
+        for video_info in videos_info:
+            st.write(f"Video Title: {video_info[1]}")
+            st.write(f"Video ID: {video_info[0]}")
+
+        st.write("--------------------------------------------------")
+
+    
+    cursor.close()
+    connection.close()
+    
 if __name__ == "__main__":
     main()

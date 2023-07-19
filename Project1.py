@@ -23,7 +23,6 @@ def get_channel_data(channel_id):
     channel_subscribers = int(channel_data['statistics']['subscriberCount'])
     channel_views = int(channel_data['statistics']['viewCount'])
     channel_description = channel_data['snippet']['description']
-    channel_playlist_id = channel_data['contentDetails']['relatedPlaylists']['uploads']
 
     return {
         "Channel_Name": {
@@ -32,18 +31,18 @@ def get_channel_data(channel_id):
             "Subscription_Count": channel_subscribers,
             "Channel_Views": channel_views,
             "Channel_Description": channel_description,
-            "Playlist_Id": channel_playlist_id
+            "Playlist_Id": None
         }
     }
 
 
-def get_playlist_data(playlist_id):
-    playlist_response = youtube.playlists().list(part='snippet', playlistId=playlist_id, maxResults=5).execute()
+def get_playlist_data(channel_id):
+    playlist_response = youtube.playlists().list(part='snippet', channelId=channel_id, maxResults=5).execute()
     playlists = playlist_response['items']
 
     # while 'nextPageToken' in playlist_response:
     #     next_page_token = playlist_response['nextPageToken']
-    #     playlist_response = youtube.playlists().list(part='snippet', playlistId=playlist_id, maxResults=5, pageToken=next_page_token).execute()
+    #     playlist_response = youtube.playlists().list(part='snippet', channelId=channel_id, maxResults=5, pageToken=next_page_token).execute()
     #     playlists.extend(playlist_response['items'])
 
     return playlists
@@ -69,7 +68,7 @@ def main():
 
     for channel_id in channel_ids:
         channel_data = get_channel_data(channel_id)
-        playlists = get_playlist_data(channel_data["Channel_Name"]["Playlist_Id"])
+        playlists = get_playlist_data(channel_id)
         videos = get_video_data(channel_id)
 
         
@@ -79,7 +78,7 @@ def main():
         for video in videos:
             mycollection.insert_one({"Video": video})
 
-        
+        st.write("---------------------------------------------------------------")
         st.write(f"Channel Name: {channel_data['Channel_Name']['Channel_Name']}")
         st.write(f"Channel ID: {channel_data['Channel_Name']['Channel_Id']}")
         st.write(f"Channel Subscribers: {channel_data['Channel_Name']['Subscription_Count']}")

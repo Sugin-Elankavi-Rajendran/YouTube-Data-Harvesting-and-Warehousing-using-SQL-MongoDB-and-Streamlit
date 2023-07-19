@@ -175,6 +175,131 @@ def retrieve_data_for_channels(channel_ids, connection, cursor):
 
     return channels_data
 
+def execute_sql_queries(connection, cursor):
+    
+    query1 = """
+    SELECT video_title, channel_name
+    FROM videos
+    INNER JOIN channels ON videos.channel_id = channels.channel_id
+    """
+    cursor.execute(query1)
+    result1 = cursor.fetchall()
+    st.write("Names of all videos and their corresponding channels:")
+    st.table(result1)
+
+    
+    query2 = """
+    SELECT channel_name, COUNT(*) AS num_videos
+    FROM videos
+    INNER JOIN channels ON videos.channel_id = channels.channel_id
+    GROUP BY channel_name
+    ORDER BY num_videos DESC
+    """
+    cursor.execute(query2)
+    result2 = cursor.fetchall()
+    st.write("Channels with the most number of videos:")
+    st.table(result2)
+
+    
+    query3 = """
+    SELECT video_title, channel_name, view_count
+    FROM videos
+    INNER JOIN channels ON videos.channel_id = channels.channel_id
+    ORDER BY view_count DESC
+    LIMIT 10
+    """
+    cursor.execute(query3)
+    result3 = cursor.fetchall()
+    st.write("Top 10 most viewed videos and their respective channels:")
+    st.table(result3)
+
+    
+    query4 = """
+    SELECT video_title, COUNT(*) AS num_comments
+    FROM comments
+    INNER JOIN videos ON comments.video_id = videos.video_id
+    GROUP BY video_title
+    """
+    cursor.execute(query4)
+    result4 = cursor.fetchall()
+    st.write("Number of comments on each video:")
+    st.table(result4)
+
+    
+    query5 = """
+    SELECT video_title, channel_name, like_count
+    FROM videos
+    INNER JOIN channels ON videos.channel_id = channels.channel_id
+    ORDER BY like_count DESC
+    LIMIT 10
+    """
+    cursor.execute(query5)
+    result5 = cursor.fetchall()
+    st.write("Videos with the highest number of likes and their corresponding channels:")
+    st.table(result5)
+
+    
+    query6 = """
+    SELECT video_title, SUM(like_count) AS total_likes, SUM(dislike_count) AS total_dislikes
+    FROM videos
+    GROUP BY video_title
+    """
+    cursor.execute(query6)
+    result6 = cursor.fetchall()
+    st.write("Total likes and dislikes for each video:")
+    st.table(result6)
+
+    
+    query7 = """
+    SELECT channel_name, SUM(view_count) AS total_views
+    FROM videos
+    INNER JOIN channels ON videos.channel_id = channels.channel_id
+    GROUP BY channel_name
+    """
+    cursor.execute(query7)
+    result7 = cursor.fetchall()
+    st.write("Total views for each channel:")
+    st.table(result7)
+
+    
+    query8 = """
+    SELECT DISTINCT channel_name
+    FROM videos
+    INNER JOIN channels ON videos.channel_id = channels.channel_id
+    WHERE YEAR(published_at) = 2022
+    """
+    cursor.execute(query8)
+    result8 = cursor.fetchall()
+    st.write("Question 8: Channels with videos published in the year 2022")
+    st.table(result8)
+
+    
+    query9 = """
+    SELECT channel_name, AVG(duration_seconds) AS average_duration
+    FROM videos
+    INNER JOIN channels ON videos.channel_id = channels.channel_id
+    GROUP BY channel_name
+    """
+    cursor.execute(query9)
+    result9 = cursor.fetchall()
+    st.write("Question 9: Average duration of videos in each channel")
+    st.table(result9)
+
+    
+    query10 = """
+    SELECT video_title, channel_name, COUNT(*) AS num_comments
+    FROM comments
+    INNER JOIN videos ON comments.video_id = videos.video_id
+    INNER JOIN channels ON videos.channel_id = channels.channel_id
+    GROUP BY video_title, channel_name
+    ORDER BY num_comments DESC
+    LIMIT 10
+    """
+    cursor.execute(query10)
+    result10 = cursor.fetchall()
+    st.write("Question 10: Videos with the highest number of comments and their corresponding channels")
+    st.table(result10)
+
 def main():
     st.title("YouTube Channel Migration")
 
@@ -252,6 +377,7 @@ def main():
 
         st.write("--------------------------------------------------")
 
+    execute_sql_queries(connection, cursor)
     
     cursor.close()
     connection.close()

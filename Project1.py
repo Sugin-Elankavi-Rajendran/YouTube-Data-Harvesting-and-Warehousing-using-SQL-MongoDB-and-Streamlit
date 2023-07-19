@@ -118,6 +118,32 @@ def main():
                 st.write(f'Video Title: {video_title}')
                 st.write(f'Video ID: {video_id}')
                 
+                comment_response = youtube.commentThreads().list(part='snippet', videoId=video_id,
+                                                                      maxResults=20).execute()
+                comments = comment_response['items']
+
+                for comment in comments:
+                    comment_data = comment['snippet']['topLevelComment']['snippet']
+                    comment_id = comment['id']
+                    comment_text = comment_data['textDisplay']
+                    comment_author = comment_data['authorDisplayName']
+                    comment_published_at = comment_data['publishedAt']
+
+                    
+                    comment_doc = {
+                        "Comment_Id": comment_id,
+                        "Comment_Text": comment_text,
+                        "Comment_Author": comment_author,
+                        "Comment_PublishedAt": comment_published_at
+                    }
+
+                    
+                    video_doc["Comments"][comment_id] = comment_doc
+
+                    st.write(f'Comment: {comment_text}')
+                    st.write(f'Author: {comment_author}')
+                    st.write(f'Published At: {comment_published_at}')
+                
                 mycollection.insert_one(video_doc)
             
             mycollection.insert_one(playlist_doc)   

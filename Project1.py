@@ -50,10 +50,10 @@ def main():
         playlist_response = youtube.playlists().list(part='snippet',channelId=channel,maxResults=5).execute()
         playlists = playlist_response['items']
 
-        while 'nextPageToken' in playlist_response:
-            next_page_token = playlist_response['nextPageToken']
-            playlist_response = youtube.playlists().list(part='snippet', channelId=channel, maxResults=5, pageToken=next_page_token).execute()
-            playlists.extend(playlist_response['items'])
+        # while 'nextPageToken' in playlist_response:
+        #     next_page_token = playlist_response['nextPageToken']
+        #     playlist_response = youtube.playlists().list(part='snippet', channelId=channel, maxResults=5, pageToken=next_page_token).execute()
+        #     playlists.extend(playlist_response['items'])
 
         for playlist in playlists:
             playlist_title = playlist['snippet']['title']
@@ -73,10 +73,10 @@ def main():
             video_response = youtube.playlistItems().list(part='snippet', playlistId=playlist_id, maxResults=50).execute()
             videos = video_response['items']
             
-            while 'nextPageToken' in video_response:
-                next_page_token = video_response['nextPageToken']
-                video_response = youtube.playlistItems().list(part='snippet', playlistId=playlist_id, maxResults=50,pageToken=next_page_token).execute()
-                videos.extend(video_response['items'])
+            # while 'nextPageToken' in video_response:
+            #     next_page_token = video_response['nextPageToken']
+            #     video_response = youtube.playlistItems().list(part='snippet', playlistId=playlist_id, maxResults=50,pageToken=next_page_token).execute()
+            #     videos.extend(video_response['items'])
             
             for video in videos:
                 video_data = video['snippet']

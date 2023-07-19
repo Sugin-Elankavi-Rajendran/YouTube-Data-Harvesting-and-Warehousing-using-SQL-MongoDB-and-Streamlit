@@ -16,7 +16,7 @@ mycollection = mydatabase["details"]
 
 
 def get_channel_data(channel_id):
-    response = youtube.channels().list(part='snippet,statistics,ContentDetails', id=channel_id).execute()
+    response = youtube.channels().list(part='snippet,statistics', id=channel_id).execute()
     channel_data = response['items'][0]
 
     channel_title = channel_data['snippet']['title']

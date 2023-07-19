@@ -282,7 +282,7 @@ def execute_sql_queries(connection, cursor):
     """
     cursor.execute(query8)
     result8 = cursor.fetchall()
-    st.write("Question 8: Channels with videos published in the year 2022")
+    st.write("Channels with videos published in the year 2022:")
     st.table(result8)
 
     
@@ -294,7 +294,7 @@ def execute_sql_queries(connection, cursor):
     """
     cursor.execute(query9)
     result9 = cursor.fetchall()
-    st.write("Question 9: Average duration of videos in each channel")
+    st.write("Average duration of videos in each channel:")
     st.table(result9)
 
     
@@ -309,7 +309,7 @@ def execute_sql_queries(connection, cursor):
     """
     cursor.execute(query10)
     result10 = cursor.fetchall()
-    st.write("Question 10: Videos with the highest number of comments and their corresponding channels")
+    st.write("Videos with the highest number of comments and their corresponding channels:")
     st.table(result10)
 
 def main():

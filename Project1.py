@@ -128,10 +128,10 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
 
 def create_mysql_connection():
     connection = mysql.connector.connect(
-        host="your_mysql_host",
-        user="your_mysql_username",
-        password="your_mysql_password",
-        database="your_database_name"
+        host="localhost",
+        user="root",
+        password="12345",
+        database="project1"
     )
     cursor = connection.cursor()
     return connection, cursor
@@ -318,6 +318,13 @@ def main():
     channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):")
     channel_ids = channel_ids.strip().split("\n") if channel_ids else []
 
+    if not channel_ids:
+        st.write("No YouTube Channel IDs provided.")
+        return
+    
+    connection, cursor = create_mysql_connection()
+    channels_data = []
+    
     for channel_id in channel_ids:
         channel_data = get_channel_data(channel_id)
         playlists = get_playlist_data(channel_id)

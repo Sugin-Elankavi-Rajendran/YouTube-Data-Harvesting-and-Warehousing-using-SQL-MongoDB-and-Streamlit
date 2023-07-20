@@ -62,6 +62,7 @@ def get_video_data(channel_id):
 
     return videos
 
+
 def create_mysql_connection():
     connection = mysql.connector.connect(
         host="localhost",
@@ -70,7 +71,7 @@ def create_mysql_connection():
         database="project1"
     )
     cursor = connection.cursor()
-    
+
     create_channels_table = """
     CREATE TABLE IF NOT EXISTS channels (
         channel_id VARCHAR(255) PRIMARY KEY,
@@ -81,7 +82,7 @@ def create_mysql_connection():
     )
     """
     cursor.execute(create_channels_table)
-    
+
     create_playlists_table = """
     CREATE TABLE IF NOT EXISTS playlists (
         playlist_id VARCHAR(255) PRIMARY KEY,
@@ -89,33 +90,19 @@ def create_mysql_connection():
     )
     """
     cursor.execute(create_playlists_table)
-    
-    create_videos_table = """
-    CREATE TABLE IF NOT EXISTS videos (
-        video_id VARCHAR(255) PRIMARY KEY,
-        video_title VARCHAR(255),
-        video_description TEXT,
-        tags TEXT,
-        published_at DATETIME,
-        view_count INT,
-        like_count INT,
-        dislike_count INT,
-        favorite_count INT,
-        comment_count INT,
-        duration VARCHAR(255),
-        thumbnail TEXT,
-        caption_status VARCHAR(50)
-    )
-    """
-    cursor.execute(create_videos_table)
 
     connection.commit()
-    
+
     return connection, cursor
 
 
 def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
-    
+    channel_id = channel_data["Channel_Name"]["Channel_Id"]
+    existing_channel = mycollection.find_one({"_id": channel_id})
+    if not existing_channel:
+        channel_data["_id"] = channel_id
+        mycollection.insert_one(channel_data)
+
     channel_sql = """
     INSERT INTO channels (channel_id, channel_name, subscription_count, channel_views, channel_description)
     VALUES (%s, %s, %s, %s, %s)
@@ -130,7 +117,13 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
     cursor.execute(channel_sql, channel_values)
     connection.commit()
 
-    
+    for playlist in playlists:
+        playlist_id = playlist["id"]
+        existing_playlist = mycollection.find_one({"_id": playlist_id})
+        if not existing_playlist:
+            playlist["_id"] = playlist_id
+            mycollection.insert_one({"_id": playlist_id, "Playlist": playlist})
+
     for playlist in playlists:
         playlist_sql = """
         INSERT INTO playlists (playlist_id, playlist_title)
@@ -143,7 +136,13 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
         cursor.execute(playlist_sql, playlist_values)
         connection.commit()
 
-    
+    for video in videos:
+        video_id = video["id"]["videoId"]
+        existing_video = mycollection.find_one({"_id": video_id})
+        if not existing_video:
+            video["_id"] = video_id
+            mycollection.insert_one({"_id": video_id, "Video": video})
+
     for video in videos:
         video_sql = """
         INSERT INTO videos (video_id, video_title, video_description, tags, published_at, view_count,
@@ -168,22 +167,12 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
         cursor.execute(video_sql, video_values)
         connection.commit()
 
-def create_mysql_connection():
-    connection = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="12345",
-        database="project1"
-    )
-    cursor = connection.cursor()
-    return connection, cursor
-
 
 def retrieve_data_for_channels(channel_ids, connection, cursor):
     channels_data = []
 
     for channel_id in channel_ids:
-        
+
         channel_sql = f"""
         SELECT *
         FROM channels
@@ -192,7 +181,6 @@ def retrieve_data_for_channels(channel_ids, connection, cursor):
         cursor.execute(channel_sql)
         channel_data = cursor.fetchone()
 
-        
         playlists_sql = f"""
         SELECT *
         FROM playlists
@@ -201,7 +189,6 @@ def retrieve_data_for_channels(channel_ids, connection, cursor):
         cursor.execute(playlists_sql)
         playlists_data = cursor.fetchall()
 
-        
         videos_sql = f"""
         SELECT *
         FROM videos
@@ -218,8 +205,8 @@ def retrieve_data_for_channels(channel_ids, connection, cursor):
 
     return channels_data
 
+
 def execute_sql_queries(connection, cursor):
-    
     query1 = """
     SELECT video_title, channel_name
     FROM videos
@@ -230,7 +217,6 @@ def execute_sql_queries(connection, cursor):
     st.write("Names of all videos and their corresponding channels:")
     st.table(result1)
 
-    
     query2 = """
     SELECT channel_name, COUNT(*) AS num_videos
     FROM videos
@@ -243,7 +229,6 @@ def execute_sql_queries(connection, cursor):
     st.write("Channels with the most number of videos:")
     st.table(result2)
 
-    
     query3 = """
     SELECT video_title, channel_name, view_count
     FROM videos
@@ -256,7 +241,6 @@ def execute_sql_queries(connection, cursor):
     st.write("Top 10 most viewed videos and their respective channels:")
     st.table(result3)
 
-    
     query4 = """
     SELECT video_title, COUNT(*) AS num_comments
     FROM comments
@@ -267,7 +251,7 @@ def execute_sql_queries(connection, cursor):
     result4 = cursor.fetchall()
     st.write("Number of comments on each video:")
     st.table(result4)
-    
+
     video_titles = [row[0] for row in result4]
     num_comments = [row[1] for row in result4]
 
@@ -279,7 +263,6 @@ def execute_sql_queries(connection, cursor):
     plt.xticks(rotation=45)
     st.pyplot()
 
-    
     query5 = """
     SELECT video_title, channel_name, like_count
     FROM videos
@@ -292,7 +275,6 @@ def execute_sql_queries(connection, cursor):
     st.write("Videos with the highest number of likes and their corresponding channels:")
     st.table(result5)
 
-    
     query6 = """
     SELECT video_title, SUM(like_count) AS total_likes, SUM(dislike_count) AS total_dislikes
     FROM videos
@@ -303,7 +285,6 @@ def execute_sql_queries(connection, cursor):
     st.write("Total likes and dislikes for each video:")
     st.table(result6)
 
-    
     query7 = """
     SELECT channel_name, SUM(view_count) AS total_views
     FROM videos
@@ -315,7 +296,6 @@ def execute_sql_queries(connection, cursor):
     st.write("Total views for each channel:")
     st.table(result7)
 
-    
     query8 = """
     SELECT DISTINCT channel_name
     FROM videos
@@ -327,7 +307,6 @@ def execute_sql_queries(connection, cursor):
     st.write("Channels with videos published in the year 2022:")
     st.table(result8)
 
-    
     query9 = """
     SELECT channel_name, AVG(duration_seconds) AS average_duration
     FROM videos
@@ -339,7 +318,6 @@ def execute_sql_queries(connection, cursor):
     st.write("Average duration of videos in each channel:")
     st.table(result9)
 
-    
     query10 = """
     SELECT video_title, channel_name, COUNT(*) AS num_comments
     FROM comments
@@ -354,6 +332,7 @@ def execute_sql_queries(connection, cursor):
     st.write("Videos with the highest number of comments and their corresponding channels:")
     st.table(result10)
 
+
 def main():
     st.title("YouTube Channel Migration")
 
@@ -363,27 +342,28 @@ def main():
     if not channel_ids:
         st.write("No YouTube Channel IDs provided.")
         return
-    
+
     connection, cursor = create_mysql_connection()
     channels_data = []
-    
+
     for channel_id in channel_ids:
         channel_data = get_channel_data(channel_id)
         playlists = get_playlist_data(channel_id)
         videos = get_video_data(channel_id)
 
         channel_data["_id"] = ObjectId()
-        
+
         for playlist in playlists:
             playlist["_id"] = ObjectId()
         for video in videos:
             video["_id"] = ObjectId()
-        
+
         mycollection.insert_one({"_id": channel_id, **channel_data["Channel_Name"]})
         for playlist in playlists:
-            mycollection.insert_one({"_id": playlist["id"], "Playlist": playlist})
+            playlist_id = f"playlist_{playlist['id']}"
+            mycollection.insert_one({"_id": playlist_id, "Playlist": playlist})
         for video in videos:
-            video_id = video["id"]["videoId"]
+            video_id = f"video_{video['id']['videoId']}"
             mycollection.insert_one({"_id": video_id, "Video": video})
 
         st.write("---------------------------------------------------------------")
@@ -403,26 +383,15 @@ def main():
 
     connection, cursor = create_mysql_connection()
 
-    
-    mycollection.insert_one(channel_data["Channel_Name"])
-    for playlist in playlists:
-        mycollection.insert_one({"Playlist": playlist})
-    for video in videos:
-        mycollection.insert_one({"Video": video})
-
-    
     migrate_to_mysql(channel_data, playlists, videos, connection, cursor)
 
-    
     st.write("Data stored in MySQL!")
 
     channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):")
     channel_ids = channel_ids.strip().split("\n") if channel_ids else []
 
-    
     channels_data = retrieve_data_for_channels(channel_ids, connection, cursor)
 
-    
     for channel_data in channels_data:
         channel_info = channel_data["Channel"]
         st.write(f"Channel Name: {channel_info[1]}")
@@ -446,9 +415,10 @@ def main():
         st.write("--------------------------------------------------")
 
     execute_sql_queries(connection, cursor)
-    
+
     cursor.close()
     connection.close()
-    
+
+
 if __name__ == "__main__":
     main()

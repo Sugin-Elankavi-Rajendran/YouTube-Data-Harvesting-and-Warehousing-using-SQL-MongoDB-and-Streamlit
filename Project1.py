@@ -17,7 +17,6 @@ myclient = MongoClient("mongodb://localhost:27017/")
 mydatabase = myclient["youtube"]
 mycollection = mydatabase["details"]
 
-
 def get_channel_data(channel_id):
     response = youtube.channels().list(part='snippet,statistics', id=channel_id).execute()
     channel_data = response['items'][0]
@@ -38,7 +37,6 @@ def get_channel_data(channel_id):
         }
     }
 
-
 def get_playlist_data(channel_id):
     playlist_response = youtube.playlists().list(part='snippet', channelId=channel_id, maxResults=5).execute()
     playlists = playlist_response['items']
@@ -50,7 +48,6 @@ def get_playlist_data(channel_id):
 
     return playlists
 
-
 def get_video_data(channel_id):
     video_response = youtube.search().list(part='snippet', channelId=channel_id, type='video', maxResults=5).execute()
     videos = video_response['items']
@@ -60,8 +57,33 @@ def get_video_data(channel_id):
     #     video_response = youtube.search().list(part='snippet', channelId=channel_id, type='video', maxResults=5, pageToken=next_page_token).execute()
     #     videos.extend(video_response['items'])
 
-    return videos
+    
+    for video in videos:
+        video_id = video["id"]["videoId"]
+        video_details_response = youtube.videos().list(part='snippet,statistics,contentDetails', id=video_id).execute()
+        video_details = video_details_response['items'][0]
+        
+        snippet = video_details.get('snippet', {})
+        statistics = video_details.get('statistics', {})
+        content_details = video_details.get('contentDetails', {})
+        
+        video["snippet"]["title"] = snippet.get("title", "Title Not Available")
+        video["snippet"]["description"] = snippet.get("description", "Description Not Available")
+        video["snippet"]["publishedAt"] = snippet.get("publishedAt", "Published Date Not Available")
+        video["snippet"]["tags"] = snippet.get("tags", [])
+        
+        video["statistics"] = {
+            "viewCount": int(statistics.get("viewCount", 0)),
+            "likeCount": int(statistics.get("likeCount", 0)),
+            "dislikeCount": int(statistics.get("dislikeCount", 0)),
+            "favoriteCount": int(statistics.get("favoriteCount", 0)),
+            "commentCount": int(statistics.get("commentCount", 0))
+        }
+        
+        video["contentDetails"]["duration"] = content_details.get("duration", "Duration Not Available")
+        video["contentDetails"]["caption"] = content_details.get("caption", "Not Available")
 
+    return videos
 
 def create_mysql_connection():
     connection = mysql.connector.connect(
@@ -94,7 +116,6 @@ def create_mysql_connection():
     connection.commit()
 
     return connection, cursor
-
 
 def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
     channel_id = channel_data["Channel_Name"]["Channel_Id"]
@@ -167,12 +188,10 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
         cursor.execute(video_sql, video_values)
         connection.commit()
 
-
 def retrieve_data_for_channels(channel_ids, connection, cursor):
     channels_data = []
 
     for channel_id in channel_ids:
-
         channel_sql = f"""
         SELECT *
         FROM channels
@@ -204,7 +223,6 @@ def retrieve_data_for_channels(channel_ids, connection, cursor):
         })
 
     return channels_data
-
 
 def execute_sql_queries(connection, cursor):
     query1 = """
@@ -332,7 +350,6 @@ def execute_sql_queries(connection, cursor):
     st.write("Videos with the highest number of comments and their corresponding channels:")
     st.table(result10)
 
-
 def main():
     st.title("YouTube Channel Migration")
 
@@ -344,7 +361,6 @@ def main():
         return
 
     connection, cursor = create_mysql_connection()
-    channels_data = []
 
     for channel_id in channel_ids:
         channel_data = get_channel_data(channel_id)
@@ -418,7 +434,6 @@ def main():
 
     cursor.close()
     connection.close()
-
 
 if __name__ == "__main__":
     main()

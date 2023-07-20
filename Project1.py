@@ -70,6 +70,47 @@ def create_mysql_connection():
         database="project1"
     )
     cursor = connection.cursor()
+    
+    create_channels_table = """
+    CREATE TABLE IF NOT EXISTS channels (
+        channel_id VARCHAR(255) PRIMARY KEY,
+        channel_name VARCHAR(255),
+        subscription_count INT,
+        channel_views INT,
+        channel_description TEXT
+    )
+    """
+    cursor.execute(create_channels_table)
+    
+    create_playlists_table = """
+    CREATE TABLE IF NOT EXISTS playlists (
+        playlist_id VARCHAR(255) PRIMARY KEY,
+        playlist_title VARCHAR(255)
+    )
+    """
+    cursor.execute(create_playlists_table)
+    
+    create_videos_table = """
+    CREATE TABLE IF NOT EXISTS videos (
+        video_id VARCHAR(255) PRIMARY KEY,
+        video_title VARCHAR(255),
+        video_description TEXT,
+        tags TEXT,
+        published_at DATETIME,
+        view_count INT,
+        like_count INT,
+        dislike_count INT,
+        favorite_count INT,
+        comment_count INT,
+        duration VARCHAR(255),
+        thumbnail TEXT,
+        caption_status VARCHAR(50)
+    )
+    """
+    cursor.execute(create_videos_table)
+
+    connection.commit()
+    
     return connection, cursor
 
 

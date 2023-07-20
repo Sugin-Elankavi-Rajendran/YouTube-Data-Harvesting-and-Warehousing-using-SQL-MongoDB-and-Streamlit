@@ -6,6 +6,7 @@ from config import API_KEY
 import streamlit as st
 import mysql.connector
 import matplotlib.pyplot as plt
+from bson.objectid import ObjectId
 
 api_service_name = "youtube"
 api_version = "v3"
@@ -330,12 +331,19 @@ def main():
         playlists = get_playlist_data(channel_id)
         videos = get_video_data(channel_id)
 
+        channel_data["_id"] = ObjectId()
         
-        mycollection.insert_one(channel_data["Channel_Name"])
         for playlist in playlists:
-            mycollection.insert_one({"Playlist": playlist})
+            playlist["_id"] = ObjectId()
         for video in videos:
-            mycollection.insert_one({"Video": video})
+            video["_id"] = ObjectId()
+        
+        mycollection.insert_one({"_id": channel_id, **channel_data["Channel_Name"]})
+        for playlist in playlists:
+            mycollection.insert_one({"_id": playlist["id"], "Playlist": playlist})
+        for video in videos:
+            video_id = video["id"]["videoId"]
+            mycollection.insert_one({"_id": video_id, "Video": video})
 
         st.write("---------------------------------------------------------------")
         st.write(f"Channel Name: {channel_data['Channel_Name']['Channel_Name']}")

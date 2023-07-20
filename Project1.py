@@ -80,8 +80,10 @@ def get_video_data(channel_id):
             "commentCount": int(statistics.get("commentCount", 0))
         }
         
-        video["contentDetails"]["duration"] = content_details.get("duration", "Duration Not Available")
-        video["contentDetails"]["caption"] = content_details.get("caption", "Not Available")
+        video["contentDetails"] = {
+            "duration": content_details.get("duration", "Duration Not Available"),
+            "caption": content_details.get("caption", "Not Available")
+        }
 
     return videos
 

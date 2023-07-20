@@ -7,6 +7,8 @@ import streamlit as st
 import mysql.connector
 import matplotlib.pyplot as plt
 from bson.objectid import ObjectId
+from pymongo.errors import DuplicateKeyError
+from datetime import datetime
 
 api_service_name = "youtube"
 api_version = "v3"
@@ -98,12 +100,13 @@ def create_mysql_connection():
 
     create_channels_table = """
     CREATE TABLE IF NOT EXISTS channels (
-        channel_id VARCHAR(255) PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        channel_id VARCHAR(255) UNIQUE,
         channel_name VARCHAR(255),
         subscription_count INT,
         channel_views INT,
         channel_description TEXT
-    )
+    ) ENGINE=InnoDB
     """
     cursor.execute(create_channels_table)
 
@@ -111,53 +114,155 @@ def create_mysql_connection():
     CREATE TABLE IF NOT EXISTS playlists (
         playlist_id VARCHAR(255) PRIMARY KEY,
         playlist_title VARCHAR(255)
-    )
+    ) ENGINE=InnoDB
     """
     cursor.execute(create_playlists_table)
+    
+    create_videos_table = """
+    CREATE TABLE IF NOT EXISTS videos (
+        video_id VARCHAR(255) PRIMARY KEY,
+        video_title VARCHAR(255),
+        video_description TEXT,
+        tags TEXT,
+        published_at DATETIME,
+        view_count INT,
+        like_count INT,
+        dislike_count INT,
+        favorite_count INT,
+        comment_count INT,
+        duration VARCHAR(50),
+        thumbnail TEXT,
+        caption_status VARCHAR(50)
+    )
+    """
+    cursor.execute(create_videos_table)
 
     connection.commit()
 
     return connection, cursor
 
-def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
+def migrate_to_mongodb(channel_data, playlists, videos):
     channel_id = channel_data["Channel_Name"]["Channel_Id"]
     existing_channel = mycollection.find_one({"_id": channel_id})
+    
     if not existing_channel:
-        channel_data["_id"] = channel_id
-        mycollection.insert_one(channel_data)
-
-    channel_sql = """
-    INSERT INTO channels (channel_id, channel_name, subscription_count, channel_views, channel_description)
-    VALUES (%s, %s, %s, %s, %s)
-    """
-    channel_values = (
-        channel_data["Channel_Name"]["Channel_Id"],
-        channel_data["Channel_Name"]["Channel_Name"],
-        channel_data["Channel_Name"]["Subscription_Count"],
-        channel_data["Channel_Name"]["Channel_Views"],
-        channel_data["Channel_Name"]["Channel_Description"]
-    )
-    cursor.execute(channel_sql, channel_values)
-    connection.commit()
+        try:
+            channel_data["_id"] = channel_id
+            mycollection.insert_one(channel_data)
+        except DuplicateKeyError:
+            # If the _id already exists, update the existing document
+            mycollection.update_one({"_id": channel_id}, {"$set": channel_data})
+    else:
+        mycollection.update_one({"_id": channel_id}, {"$set": channel_data})
 
     for playlist in playlists:
         playlist_id = playlist["id"]
         existing_playlist = mycollection.find_one({"_id": playlist_id})
         if not existing_playlist:
-            playlist["_id"] = playlist_id
-            mycollection.insert_one({"_id": playlist_id, "Playlist": playlist})
+            try:
+                playlist["_id"] = playlist_id
+                mycollection.insert_one({"_id": playlist_id, "Playlist": playlist})
+            except DuplicateKeyError:
+                # If the _id already exists, update the existing document
+                mycollection.update_one({"_id": playlist_id}, {"$set": {"Playlist": playlist}})
+        else:
+            mycollection.update_one({"_id": playlist_id}, {"$set": {"Playlist": playlist}})
+    
+    for video in videos:
+        video_id = video["id"]["videoId"]
+        existing_video = mycollection.find_one({"_id": video_id})
+        if not existing_video:
+            try:
+                video["_id"] = video_id
+                mycollection.insert_one({"_id": video_id, "Video": video})
+            except DuplicateKeyError:
+                # If the _id already exists, update the existing document
+                mycollection.update_one({"_id": video_id}, {"$set": {"Video": video}})
+        else:
+            mycollection.update_one({"_id": video_id}, {"$set": {"Video": video}})
+
+def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
+    channel_id = channel_data["Channel_Name"]["Channel_Id"]
+    
+    existing_channel_sql = f"""
+    SELECT *
+    FROM channels
+    WHERE channel_id = '{channel_id}'
+    """
+    cursor.execute(existing_channel_sql)
+    existing_channel = cursor.fetchone()
+
+    if existing_channel:
+        
+        update_channel_sql = f"""
+        UPDATE channels
+        SET channel_name = %s,
+            subscription_count = %s,
+            channel_views = %s,
+            channel_description = %s
+        WHERE channel_id = %s
+        """
+        update_channel_values = (
+            channel_data["Channel_Name"]["Channel_Name"],
+            channel_data["Channel_Name"]["Subscription_Count"],
+            channel_data["Channel_Name"]["Channel_Views"],
+            channel_data["Channel_Name"]["Channel_Description"],
+            channel_id
+        )
+        cursor.execute(update_channel_sql, update_channel_values)
+    else:
+       
+        channel_sql = """
+        INSERT INTO channels (channel_id, channel_name, subscription_count, channel_views, channel_description)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+        channel_values = (
+            channel_id,
+            channel_data["Channel_Name"]["Channel_Name"],
+            channel_data["Channel_Name"]["Subscription_Count"],
+            channel_data["Channel_Name"]["Channel_Views"],
+            channel_data["Channel_Name"]["Channel_Description"]
+        )
+        cursor.execute(channel_sql, channel_values)
+
+    connection.commit()
 
     for playlist in playlists:
-        playlist_sql = """
-        INSERT INTO playlists (playlist_id, playlist_title)
-        VALUES (%s, %s)
+        playlist_id = f"playlist_{playlist['id']}"
+        
+        existing_playlist_sql = f"""
+        SELECT *
+        FROM playlists
+        WHERE playlist_id = '{playlist_id}'
         """
-        playlist_values = (
-            playlist["id"],
-            playlist["snippet"]["title"]
-        )
-        cursor.execute(playlist_sql, playlist_values)
-        connection.commit()
+        cursor.execute(existing_playlist_sql)
+        existing_playlist = cursor.fetchone()
+
+        if existing_playlist:
+            # If the playlist exists, update the record instead of inserting a new one
+            update_playlist_sql = f"""
+            UPDATE playlists
+            SET playlist_title = %s
+            WHERE playlist_id = %s
+            """
+            update_playlist_values = (
+                playlist['snippet']['title'],
+                playlist_id
+            )
+            cursor.execute(update_playlist_sql, update_playlist_values)
+        else:
+            # If the playlist does not exist, insert a new record
+            playlist_sql = """
+            INSERT INTO playlists (playlist_id, playlist_title)
+            VALUES (%s, %s)
+            """
+            playlist_values = (
+                playlist_id,
+                playlist['snippet']['title']
+            )
+            cursor.execute(playlist_sql, playlist_values)
+
+    connection.commit()
 
     for video in videos:
         video_id = video["id"]["videoId"]
@@ -167,6 +272,10 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
             mycollection.insert_one({"_id": video_id, "Video": video})
 
     for video in videos:
+        
+        published_at_str = video["snippet"]["publishedAt"]
+        published_at = datetime.strptime(published_at_str, "%Y-%m-%dT%H:%M:%SZ")
+        
         video_sql = """
         INSERT INTO videos (video_id, video_title, video_description, tags, published_at, view_count,
                             like_count, dislike_count, favorite_count, comment_count, duration, thumbnail, caption_status)
@@ -177,7 +286,7 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
             video["snippet"]["title"],
             video["snippet"]["description"],
             ",".join(video["snippet"].get("tags", [])),
-            video["snippet"]["publishedAt"],
+            published_at, 
             int(video["statistics"]["viewCount"]),
             int(video["statistics"]["likeCount"]),
             int(video["statistics"]["dislikeCount"]),
@@ -355,34 +464,43 @@ def execute_sql_queries(connection, cursor):
 def main():
     st.title("YouTube Channel Migration")
 
-    channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):")
+    channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):", key="channel_ids")
     channel_ids = channel_ids.strip().split("\n") if channel_ids else []
 
     if not channel_ids:
         st.write("No YouTube Channel IDs provided.")
         return
-
+    
     connection, cursor = create_mysql_connection()
-
+    channels_data = []
+    
     for channel_id in channel_ids:
         channel_data = get_channel_data(channel_id)
         playlists = get_playlist_data(channel_id)
         videos = get_video_data(channel_id)
 
         channel_data["_id"] = ObjectId()
-
+        
         for playlist in playlists:
             playlist["_id"] = ObjectId()
         for video in videos:
             video["_id"] = ObjectId()
 
-        mycollection.insert_one({"_id": channel_id, **channel_data["Channel_Name"]})
-        for playlist in playlists:
-            playlist_id = f"playlist_{playlist['id']}"
-            mycollection.insert_one({"_id": playlist_id, "Playlist": playlist})
-        for video in videos:
-            video_id = f"video_{video['id']['videoId']}"
-            mycollection.insert_one({"_id": video_id, "Video": video})
+        try:
+            mycollection.insert_one({"_id": channel_id, **channel_data["Channel_Name"]})
+            for playlist in playlists:
+                playlist_id = f"playlist_{playlist['id']}"
+                mycollection.insert_one({"_id": playlist_id, "Playlist": playlist})
+            for video in videos:
+                video_id = f"video_{video['id']['videoId']}"
+                mycollection.insert_one({"_id": video_id, "Video": video})
+        except DuplicateKeyError as e:
+            st.write(f"Skipping insertion of channel {channel_data['Channel_Name']['Channel_Name']} "
+                     f"({channel_data['Channel_Name']['Channel_Id']}) as it already exists in MongoDB.")
+
+        migrate_to_mysql(channel_data, playlists, videos, connection, cursor)
+
+        st.write("Data stored in MongoDB and MySQL!")
 
         st.write("---------------------------------------------------------------")
         st.write(f"Channel Name: {channel_data['Channel_Name']['Channel_Name']}")
@@ -397,18 +515,27 @@ def main():
             st.write(f"Video Title: {video['snippet']['title']}")
             st.write(f"Video ID: {video['id']['videoId']}")
 
-        st.write("Data stored in MongoDB!")
+        st.write("Data stored in MongoDB and MySQL!")
 
-    connection, cursor = create_mysql_connection()
+        channels_data.append({
+            "Channel": channel_data,
+            "Playlists": playlists,
+            "Videos": videos
+        })
 
-    migrate_to_mysql(channel_data, playlists, videos, connection, cursor)
-
-    st.write("Data stored in MySQL!")
+    connection.close()
+    cursor.close()
 
     channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):")
     channel_ids = channel_ids.strip().split("\n") if channel_ids else []
 
     channels_data = retrieve_data_for_channels(channel_ids, connection, cursor)
+
+    execute_sql_queries(connection, cursor)
+
+    st.write("--------------------------------------------------")
+    st.write("Query Results:")
+    st.write("--------------------------------------------------")
 
     for channel_data in channels_data:
         channel_info = channel_data["Channel"]

@@ -266,37 +266,68 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
 
     for video in videos:
         video_id = video["id"]["videoId"]
-        existing_video = mycollection.find_one({"_id": video_id})
-        if not existing_video:
-            video["_id"] = video_id
-            mycollection.insert_one({"_id": video_id, "Video": video})
+        # Check if the video with the same video_id already exists in the 'videos' table
+        existing_video_sql = f"SELECT * FROM videos WHERE video_id = '{video_id}'"
+        cursor.execute(existing_video_sql)
+        existing_video = cursor.fetchone()
 
-    for video in videos:
-        
-        published_at_str = video["snippet"]["publishedAt"]
-        published_at = datetime.strptime(published_at_str, "%Y-%m-%dT%H:%M:%SZ")
-        
-        video_sql = """
-        INSERT INTO videos (video_id, video_title, video_description, tags, published_at, view_count,
-                            like_count, dislike_count, favorite_count, comment_count, duration, thumbnail, caption_status)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        video_values = (
-            video["id"]["videoId"],
-            video["snippet"]["title"],
-            video["snippet"]["description"],
-            ",".join(video["snippet"].get("tags", [])),
-            published_at, 
-            int(video["statistics"]["viewCount"]),
-            int(video["statistics"]["likeCount"]),
-            int(video["statistics"]["dislikeCount"]),
-            int(video["statistics"]["favoriteCount"]),
-            int(video["statistics"]["commentCount"]),
-            video["contentDetails"]["duration"],
-            video["snippet"]["thumbnails"]["default"]["url"],
-            video["contentDetails"].get("caption", "Not Available")
-        )
-        cursor.execute(video_sql, video_values)
+        if existing_video:
+            # If the video exists, update its attributes instead of inserting a new record
+            update_video_sql = """
+            UPDATE videos
+            SET video_title = %s,
+                video_description = %s,
+                tags = %s,
+                published_at = %s,
+                view_count = %s,
+                like_count = %s,
+                dislike_count = %s,
+                favorite_count = %s,
+                comment_count = %s,
+                duration = %s,
+                thumbnail = %s,
+                caption_status = %s
+            WHERE video_id = %s
+            """
+            update_video_values = (
+                video["snippet"]["title"],
+                video["snippet"]["description"],
+                ",".join(video["snippet"].get("tags", [])),
+                video["snippet"]["publishedAt"],
+                video["statistics"]["viewCount"],
+                video["statistics"]["likeCount"],
+                video["statistics"]["dislikeCount"],
+                video["statistics"]["favoriteCount"],
+                video["statistics"]["commentCount"],
+                video["contentDetails"]["duration"],
+                video["snippet"]["thumbnails"]["default"]["url"],
+                video["contentDetails"].get("caption", "Not Available"),
+                video_id
+            )
+            cursor.execute(update_video_sql, update_video_values)
+        else:
+            # If the video does not exist, insert a new record
+            video_sql = """
+            INSERT INTO videos (video_id, video_title, video_description, tags, published_at, view_count,
+                                like_count, dislike_count, favorite_count, comment_count, duration, thumbnail, caption_status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            video_values = (
+                video_id,
+                video["snippet"]["title"],
+                video["snippet"]["description"],
+                ",".join(video["snippet"].get("tags", [])),
+                video["snippet"]["publishedAt"],
+                video["statistics"]["viewCount"],
+                video["statistics"]["likeCount"],
+                video["statistics"]["dislikeCount"],
+                video["statistics"]["favoriteCount"],
+                video["statistics"]["commentCount"],
+                video["contentDetails"]["duration"],
+                video["snippet"]["thumbnails"]["default"]["url"],
+                video["contentDetails"].get("caption", "Not Available")
+            )
+            cursor.execute(video_sql, video_values)
         connection.commit()
 
 def retrieve_data_for_channels(channel_ids, connection, cursor):
@@ -525,12 +556,16 @@ def main():
 
     connection.close()
     cursor.close()
+    myclient.close()
 
     channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):")
     channel_ids = channel_ids.strip().split("\n") if channel_ids else []
 
     channels_data = retrieve_data_for_channels(channel_ids, connection, cursor)
 
+    connection, cursor = create_mysql_connection()
+    channels_data = retrieve_data_for_channels(channel_ids, connection, cursor)
+    
     execute_sql_queries(connection, cursor)
 
     st.write("--------------------------------------------------")

@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from bson.objectid import ObjectId
 from pymongo.errors import DuplicateKeyError
 from datetime import datetime
+from dateutil import parser as date_parser
 
 api_service_name = "youtube"
 api_version = "v3"
@@ -120,7 +121,9 @@ def create_mysql_connection():
     
     create_videos_table = """
     CREATE TABLE IF NOT EXISTS videos (
-        video_id VARCHAR(255) PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        channel_id VARCHAR(255),  
+        video_id VARCHAR(255) UNIQUE,
         video_title VARCHAR(255),
         video_description TEXT,
         tags TEXT,
@@ -133,7 +136,7 @@ def create_mysql_connection():
         duration VARCHAR(50),
         thumbnail TEXT,
         caption_status VARCHAR(50)
-    )
+    ) ENGINE=InnoDB
     """
     cursor.execute(create_videos_table)
 
@@ -193,7 +196,7 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
     existing_channel = cursor.fetchone()
 
     if existing_channel:
-        
+        # Existing channel, update its attributes
         update_channel_sql = f"""
         UPDATE channels
         SET channel_name = %s,
@@ -211,7 +214,7 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
         )
         cursor.execute(update_channel_sql, update_channel_values)
     else:
-       
+        # New channel, insert a new record
         channel_sql = """
         INSERT INTO channels (channel_id, channel_name, subscription_count, channel_views, channel_description)
         VALUES (%s, %s, %s, %s, %s)
@@ -239,7 +242,7 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
         existing_playlist = cursor.fetchone()
 
         if existing_playlist:
-            # If the playlist exists, update the record instead of inserting a new one
+            # Existing playlist, update its attributes
             update_playlist_sql = f"""
             UPDATE playlists
             SET playlist_title = %s
@@ -251,7 +254,7 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
             )
             cursor.execute(update_playlist_sql, update_playlist_values)
         else:
-            # If the playlist does not exist, insert a new record
+            # New playlist, insert a new record
             playlist_sql = """
             INSERT INTO playlists (playlist_id, playlist_title)
             VALUES (%s, %s)
@@ -266,13 +269,14 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
 
     for video in videos:
         video_id = video["id"]["videoId"]
-        # Check if the video with the same video_id already exists in the 'videos' table
-        existing_video_sql = f"SELECT * FROM videos WHERE video_id = '{video_id}'"
+        video["channel_id"] = channel_id
+        
+        existing_video_sql = f"SELECT * FROM videos WHERE video_id = '{video_id}' AND channel_id = '{channel_id}'"
         cursor.execute(existing_video_sql)
         existing_video = cursor.fetchone()
 
         if existing_video:
-            # If the video exists, update its attributes instead of inserting a new record
+            # Existing video, update its attributes
             update_video_sql = """
             UPDATE videos
             SET video_title = %s,
@@ -287,13 +291,13 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
                 duration = %s,
                 thumbnail = %s,
                 caption_status = %s
-            WHERE video_id = %s
+            WHERE video_id = %s AND channel_id = %s
             """
             update_video_values = (
                 video["snippet"]["title"],
                 video["snippet"]["description"],
                 ",".join(video["snippet"].get("tags", [])),
-                video["snippet"]["publishedAt"],
+                date_parser.parse(video["snippet"]["publishedAt"]).strftime('%Y-%m-%d %H:%M:%S'),
                 video["statistics"]["viewCount"],
                 video["statistics"]["likeCount"],
                 video["statistics"]["dislikeCount"],
@@ -302,22 +306,24 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
                 video["contentDetails"]["duration"],
                 video["snippet"]["thumbnails"]["default"]["url"],
                 video["contentDetails"].get("caption", "Not Available"),
-                video_id
+                video_id,
+                channel_id
             )
             cursor.execute(update_video_sql, update_video_values)
         else:
-            # If the video does not exist, insert a new record
+            # New video, insert a new record
             video_sql = """
-            INSERT INTO videos (video_id, video_title, video_description, tags, published_at, view_count,
+            INSERT INTO videos (channel_id, video_id, video_title, video_description, tags, published_at, view_count,
                                 like_count, dislike_count, favorite_count, comment_count, duration, thumbnail, caption_status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             video_values = (
+                channel_id,
                 video_id,
                 video["snippet"]["title"],
                 video["snippet"]["description"],
                 ",".join(video["snippet"].get("tags", [])),
-                video["snippet"]["publishedAt"],
+                date_parser.parse(video["snippet"]["publishedAt"]).strftime('%Y-%m-%d %H:%M:%S'),
                 video["statistics"]["viewCount"],
                 video["statistics"]["likeCount"],
                 video["statistics"]["dislikeCount"],
@@ -495,23 +501,23 @@ def execute_sql_queries(connection, cursor):
 def main():
     st.title("YouTube Channel Migration")
 
-    channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):", key="channel_ids")
+    channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):")
     channel_ids = channel_ids.strip().split("\n") if channel_ids else []
 
     if not channel_ids:
         st.write("No YouTube Channel IDs provided.")
         return
-    
+
     connection, cursor = create_mysql_connection()
     channels_data = []
-    
+
     for channel_id in channel_ids:
         channel_data = get_channel_data(channel_id)
         playlists = get_playlist_data(channel_id)
         videos = get_video_data(channel_id)
 
         channel_data["_id"] = ObjectId()
-        
+
         for playlist in playlists:
             playlist["_id"] = ObjectId()
         for video in videos:
@@ -558,11 +564,6 @@ def main():
     cursor.close()
     myclient.close()
 
-    channel_ids = st.text_area("Enter YouTube Channel IDs (one per line):")
-    channel_ids = channel_ids.strip().split("\n") if channel_ids else []
-
-    channels_data = retrieve_data_for_channels(channel_ids, connection, cursor)
-
     connection, cursor = create_mysql_connection()
     channels_data = retrieve_data_for_channels(channel_ids, connection, cursor)
     
@@ -593,8 +594,6 @@ def main():
             st.write(f"Video ID: {video_info[0]}")
 
         st.write("--------------------------------------------------")
-
-    execute_sql_queries(connection, cursor)
 
     cursor.close()
     connection.close()

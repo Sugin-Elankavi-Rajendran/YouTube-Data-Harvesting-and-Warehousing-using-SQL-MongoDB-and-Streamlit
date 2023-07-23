@@ -95,7 +95,7 @@ def create_mysql_connection():
         host="localhost",
         user="root",
         password="12345",
-        database="project1"
+        database="project11"
     )
     cursor = connection.cursor()
 
@@ -120,6 +120,17 @@ def create_mysql_connection():
         ) ENGINE=InnoDB
     """
     cursor.execute(create_playlists_table)
+
+    create_comments_table = """
+        CREATE TABLE IF NOT EXISTS comments (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            video_id VARCHAR(255),
+            comment_text TEXT,
+            comment_author VARCHAR(255),
+            comment_date DATETIME
+        ) ENGINE=InnoDB
+    """
+    cursor.execute(create_comments_table)
     
     create_videos_table = """
         CREATE TABLE IF NOT EXISTS videos (

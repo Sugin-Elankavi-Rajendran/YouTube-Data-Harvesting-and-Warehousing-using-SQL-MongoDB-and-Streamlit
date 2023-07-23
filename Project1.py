@@ -488,7 +488,7 @@ def execute_sql_queries(connection, cursor):
     st.table(result8)
 
     query9 = """
-    SELECT channel_name, AVG(duration_seconds) AS average_duration
+    SELECT channel_name, AVG(duration) AS average_duration
     FROM videos
     INNER JOIN channels ON videos.channel_id = channels.channel_id
     GROUP BY channel_name

@@ -105,7 +105,7 @@ def create_mysql_connection():
             channel_id VARCHAR(255) UNIQUE,
             channel_name VARCHAR(255),
             subscription_count INT,
-            channel_views INT,
+            channel_views BIGINT,
             channel_description TEXT
         ) ENGINE=InnoDB
     """
@@ -226,7 +226,7 @@ def migrate_to_mysql(channel_data, playlists, videos, connection, cursor):
             channel_id,
             channel_data["Channel_Name"]["Channel_Name"],
             channel_data["Channel_Name"]["Subscription_Count"],
-            channel_data["Channel_Name"]["Channel_Views"],
+            int(channel_data["Channel_Name"]["Channel_Views"]),
             channel_data["Channel_Name"]["Channel_Description"]
         )
         cursor.execute(channel_sql, channel_values)

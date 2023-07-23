@@ -583,32 +583,7 @@ def main():
     
     execute_sql_queries(connection, cursor)
 
-    st.write("--------------------------------------------------")
-    st.write("Query Results:")
-    st.write("--------------------------------------------------")
-
-    for channel_data in channels_data:
-        channel_info = channel_data["Channel"]
-        st.write(f"Channel Name: {channel_info[1]}")
-        st.write(f"Channel ID: {channel_info[0]}")
-        st.write(f"Channel Subscribers: {channel_info[2]}")
-        st.write(f"Channel Views: {channel_info[3]}")
-        st.write(f"Channel Description: {channel_info[4]}")
-
-        playlists_info = channel_data["Playlists"]
-        st.write("Playlists:")
-        for playlist_info in playlists_info:
-            st.write(f"Playlist Title: {playlist_info[1]}")
-            st.write(f"Playlist ID: {playlist_info[0]}")
-
-        videos_info = channel_data["Videos"]
-        st.write("Videos:")
-        for video_info in videos_info:
-            st.write(f"Video Title: {video_info[1]}")
-            st.write(f"Video ID: {video_info[0]}")
-
-        st.write("--------------------------------------------------")
-
+    
     cursor.close()
     connection.close()
 

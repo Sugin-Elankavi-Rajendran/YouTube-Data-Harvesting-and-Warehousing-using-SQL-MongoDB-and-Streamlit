@@ -432,16 +432,16 @@ def execute_sql_queries(connection, cursor):
     # st.write("Number of comments on each video:")
     # st.table(result4)
 
-    video_titles = [row[0] for row in result4]
-    num_comments = [row[1] for row in result4]
+    # video_titles = [row[0] for row in result4]
+    # num_comments = [row[1] for row in result4]
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.bar(video_titles, num_comments)
-    ax.set_xlabel('Video Titles')
-    ax.set_ylabel('Number of Comments')
-    ax.set_title('Number of Comments on Each Video')
-    plt.xticks(rotation=45)
-    st.pyplot(fig)
+    # fig, ax = plt.subplots(figsize=(10, 6))
+    # ax.bar(video_titles, num_comments)
+    # ax.set_xlabel('Video Titles')
+    # ax.set_ylabel('Number of Comments')
+    # ax.set_title('Number of Comments on Each Video')
+    # plt.xticks(rotation=45)
+    # st.pyplot(fig)
 
     query5 = """
     SELECT video_title, channel_name, like_count

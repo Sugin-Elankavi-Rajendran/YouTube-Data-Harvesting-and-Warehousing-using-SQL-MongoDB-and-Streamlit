@@ -429,8 +429,8 @@ def execute_sql_queries(connection, cursor):
     """
     cursor.execute(query4)
     result4 = cursor.fetchall()
-    st.write("Number of comments on each video:")
-    st.table(result4)
+    # st.write("Number of comments on each video:")
+    # st.table(result4)
 
     video_titles = [row[0] for row in result4]
     num_comments = [row[1] for row in result4]
@@ -509,8 +509,8 @@ def execute_sql_queries(connection, cursor):
     """
     cursor.execute(query10)
     result10 = cursor.fetchall()
-    st.write("Videos with the highest number of comments and their corresponding channels:")
-    st.table(result10)
+    # st.write("Videos with the highest number of comments and their corresponding channels:")
+    # st.table(result10)
 
 def main():
     st.title("YouTube Channel Migration")
